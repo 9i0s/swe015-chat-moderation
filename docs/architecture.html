@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>GuardChat architecture</title>
+<style>
+  :root { --ink:#1d2333; --dim:#5b6479; --line:#c9cfdc; --clean:#2f9e7d; --off:#e2584a; --clock:#c98a0b;
+          --srv:#eef1f7; --cli:#e8f6f1; --off-bg:#fbf3e3; }
+  * { box-sizing: border-box; }
+  body { margin:0; width:1600px; height:720px; background:#fff; color:var(--ink);
+         font:16px/1.35 Inter, "Segoe UI", Arial, sans-serif; position:relative; }
+  .zone { position:absolute; border-radius:16px; padding:14px 18px; }
+  .zone > h3 { margin:0 0 2px; font-size:17px; font-weight:750; }
+  .zone > .where { color:var(--dim); font-size:13.5px; margin-bottom:12px; }
+  #client { left:24px; top:24px; width:300px; height:672px; background:var(--cli); }
+  #server { left:350px; top:24px; width:880px; height:672px; background:var(--srv); }
+  #offline { left:1256px; top:24px; width:320px; height:672px; background:var(--off-bg); }
+  .box { position:absolute; background:#fff; border:1.5px solid var(--line); border-radius:10px; padding:10px 13px; }
+  .box h4 { margin:0 0 4px; font-size:15.5px; font-weight:700; }
+  .box p { margin:0; font-size:13.5px; color:var(--dim); }
+  .box p b { color:var(--ink); font-weight:600; }
+  .box.main { border:2.5px solid var(--ink); }
+  .tag { display:inline-block; font-size:12px; font-weight:700; padding:1px 7px; border-radius:99px; margin-left:6px;
+         background:#1d2333; color:#fff; vertical-align:2px; }
+  .tag.a { background:#6d5bd0; } .tag.b { background:#2f9e7d; } .tag.c { background:#2f6fd0; } .tag.d { background:#c98a0b; }
+  .alt { position:absolute; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .alt .box { position:relative; }
+  svg { position:absolute; inset:0; pointer-events:none; }
+  .lbl { position:absolute; font-size:12.5px; color:var(--dim); background:#fff; padding:1px 6px; border-radius:6px; }
+</style></head>
+<body>
+<div class="zone" id="client"><h3>Client</h3><div class="where">Any web browser</div></div>
+<div class="zone" id="server"><h3>Server</h3><div class="where">Python 3 · FastAPI + Uvicorn · CPU only, PyTorch on 1 thread per request</div></div>
+<div class="zone" id="offline"><h3>Offline training</h3><div class="where">Run once on CPU, loaded at start-up</div></div>
+
+<!-- client -->
+<div class="box" id="ui" style="left:44px;top:110px;width:260px;">
+  <h4>GuardChat web UI</h4>
+  <p>app/static/index.html<br>Player types a Turkish message, chooses the model, can compare all five</p></div>
+<div class="box" id="view" style="left:44px;top:540px;width:260px;">
+  <h4>Chat view</h4>
+  <p>Receives label, confidence, masked text and latency. Shows a verdict chip, <b>masked text</b> for flagged messages, timing bar against the 25&nbsp;ms budget, response-time log</p></div>
+
+<!-- server -->
+<div class="box" id="api" style="left:372px;top:110px;width:250px;">
+  <h4>POST /api/moderate</h4>
+  <p>app/server.py<br>JSON in: text, model, compare</p></div>
+<div class="box" id="pre" style="left:660px;top:110px;width:548px;">
+  <h4>Pre-processing <span class="tag b">B</span></h4>
+  <p><b>light_normalize</b> for the Transformer: collapse @USER, URLs, 3+ repeated characters.<br>
+     <b>normalize</b> for classical models: Turkish lower-casing (I→ı, İ→i), leetspeak (s1kt1r→siktir), s.i.k / o*ç separators, repeats.</p></div>
+<div class="box main" id="bert" style="left:660px;top:262px;width:548px;">
+  <h4>DistilBERTurk, fine-tuned · INT8 (default) <span class="tag c">C</span><span class="tag d">D</span></h4>
+  <p>WordPiece tokenizer (32k vocab, ≤ 96 tokens) → 6-layer Transformer encoder, 12 attention heads →
+     [CLS] classification head → softmax P(offensive).<br><b>Precision:</b> Linear layers INT8 (dynamic quantization), embeddings + LayerNorm FP32</p></div>
+<div class="alt" id="alts" style="left:660px;top:420px;width:548px;">
+  <div class="box"><h4 style="font-size:14px">DistilBERTurk FP32 <span class="tag c">C</span></h4><p>Same network before quantization</p></div>
+  <div class="box"><h4 style="font-size:14px">word2vec + FFNN <span class="tag a">A</span></h4><p>Own skip-gram 100-d, [mean;max] → 128 → 64 → 2, FP32</p></div>
+  <div class="box"><h4 style="font-size:14px">tf-idf + log. regression <span class="tag b">B</span></h4><p>Word 1–2 + char 2–5 grams, FP64</p></div>
+  <div class="box"><h4 style="font-size:14px">Edit-distance lexicon <span class="tag b">B</span></h4><p>Levenshtein rules, no learning</p></div>
+</div>
+<div class="lbl" style="left:672px;top:396px;">Other models of the ladder, selectable live</div>
+<div class="box" id="post" style="left:372px;top:596px;width:836px;">
+  <h4>Post-processing <span class="tag b">B</span></h4>
+  <p><b>Threshold</b> per model (tuned on validation, models/thresholds.json) → label + confidence ·
+     if offensive: <b>mask</b> words matched by the edit-distance lexicon, otherwise hide the whole message ·
+     end-to-end <b>latency</b> timer (normalisation + model)</p></div>
+
+<!-- offline -->
+<div class="box" id="data" style="left:1276px;top:110px;width:280px;">
+  <h4>OffensEval-TR 2020</h4><p>31,756 labelled Turkish tweets → stratified split 80 / 10 / 10 (seed 42)</p></div>
+<div class="box" id="train" style="left:1276px;top:262px;width:280px;">
+  <h4>Training scripts</h4><p>train_tfidf.py · train_w2v_ffnn.py (SGD + backprop) · train_transformer.py (AdamW) → model files</p></div>
+<div class="box" id="quant" style="left:1276px;top:420px;width:280px;">
+  <h4>quantize.py <span class="tag d">D</span></h4><p>torch quantize_dynamic, qint8 → model_int8.pt</p></div>
+<div class="box" id="eval" style="left:1276px;top:582px;width:280px;">
+  <h4>evaluate.py</h4><p>Same test set for all models · thresholds.json · macro-F1, size, latency</p></div>
+
+<svg id="arrows" width="1600" height="720">
+  <defs><marker id="h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#1d2333"/></marker>
+    <marker id="hd" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M0,0 L10,5 L0,10 z" fill="#8a93a8"/></marker></defs>
+</svg>
+<script>
+const svg = document.getElementById("arrows");
+const r = (id) => document.getElementById(id).getBoundingClientRect();
+function line(pts, dashed, label, lx, ly) {
+  const p = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+  p.setAttribute("points", pts.map((q) => q.join(",")).join(" "));
+  p.setAttribute("fill", "none"); p.setAttribute("stroke", dashed ? "#8a93a8" : "#1d2333");
+  p.setAttribute("stroke-width", dashed ? 1.8 : 2.2); if (dashed) p.setAttribute("stroke-dasharray", "6 5");
+  p.setAttribute("marker-end", dashed ? "url(#hd)" : "url(#h)"); svg.appendChild(p);
+  if (label) { const d = document.createElement("div"); d.className = "lbl"; d.textContent = label;
+    d.style.left = lx + "px"; d.style.top = ly + "px"; document.body.appendChild(d); }
+}
+const ui = r("ui"), api = r("api"), pre = r("pre"), bert = r("bert"), post = r("post"), view = r("view"), alts = r("alts");
+const data = r("data"), train = r("train"), quant = r("quant"), ev = r("eval");
+const midY = (b) => b.top + b.height / 2, midX = (b) => b.left + b.width / 2;
+line([[ui.right, midY(api)], [api.left - 2, midY(api)]]);
+line([[api.right, midY(api)], [pre.left - 2, midY(api)]]);
+line([[midX(bert), pre.bottom], [midX(bert), bert.top - 2]]);
+line([[bert.left, midY(bert)], [638, midY(bert)], [638, post.top - 2]]);
+line([[midX(alts), alts.bottom], [midX(alts), post.top - 2]], true);
+line([[post.left, midY(post)], [view.right + 2, midY(post)]]);
+line([[midX(data), data.bottom], [midX(data), train.top - 2]]);
+line([[midX(train), train.bottom], [midX(train), quant.top - 2]]);
+line([[midX(quant), quant.bottom], [midX(quant), ev.top - 2]]);
+line([[train.left, midY(train)], [bert.right + 2, midY(train)]], true);
+line([[quant.left, midY(quant)], [alts.right + 2, midY(quant)]], true);
+line([[ev.left, midY(ev)], [post.right + 2, midY(ev)]], true);
+</script>
+</body></html>

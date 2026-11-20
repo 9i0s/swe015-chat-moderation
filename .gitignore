@@ -1,0 +1,22 @@
+# model weights are downloaded from Google Drive (scripts/download_models.py), never committed
+models/*
+!models/thresholds.json
+*.zip
+*.safetensors
+*.pt
+*.bin
+*.joblib
+
+# raw data is downloaded by scripts/prepare_data.py
+data/offenseval_tr_2020_full.tsv
+
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+.DS_Store
+
+# tweet texts are not redistributed: prepare_data.py rebuilds them from the public source + split_ids.json
+data/*.tsv
+results/test_predictions.tsv

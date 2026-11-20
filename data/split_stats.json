@@ -1,0 +1,20 @@
+{
+  "source": "https://raw.githubusercontent.com/jb-1811/NLP_with_NN_ws1920_OffensEval2020/30b30f821ed33c5a7e9c73e3c76d882d70904845/xlmr/data/turkish/full.tsv",
+  "seed": 42,
+  "total": 31756,
+  "train": {
+    "n": 25404,
+    "offensive": 4905,
+    "offensive_ratio": 0.1931
+  },
+  "val": {
+    "n": 3176,
+    "offensive": 613,
+    "offensive_ratio": 0.193
+  },
+  "test": {
+    "n": 3176,
+    "offensive": 613,
+    "offensive_ratio": 0.193
+  }
+}
