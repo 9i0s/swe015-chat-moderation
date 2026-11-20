@@ -1,0 +1,6 @@
+{
+  "method": "torch.ao.quantization.quantize_dynamic, qint8, nn.Linear only",
+  "quantized_linear_layers": 38,
+  "fp32_weights_mb": 272.4,
+  "int8_weights_mb": 143.3
+}

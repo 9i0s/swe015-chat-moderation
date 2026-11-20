@@ -140,7 +140,7 @@ def main():
     # markdown table
     lines = [f"Test set: {len(yte)} tweets ({int(yte.sum())} offensive). Hardware: {hardware['cpu']}, "
              f"1 thread, batch 1, {N_LATENCY} runs. Latency budget: {LATENCY_BUDGET_MS:.0f} ms/message.", "",
-             "| Model | Area | Precision | Macro-F1 (95% CI) | Off. recall | Size (MB) | Latency mean / p95 (ms) | Budget |",
+             "| Model | Area | Number format | Macro-F1 (95% CI) | Off. recall | Size (MB) | Latency mean / p95 (ms) | Budget |",
              "|---|---|---|---|---|---|---|---|"]
     for r in results:
         lines.append(f"| {r['model']} | {r['area']} | {r['precision']} | {r['test_macro_f1']:.3f} "

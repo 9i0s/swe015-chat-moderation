@@ -51,24 +51,24 @@ def _undo_leet(match: re.Match) -> str:
 def deobfuscate(text: str) -> str:
     """Token-level de-obfuscation in front of the Transformer (used at inference time).
 
-    Only words that are obfuscated (leetspeak inside a word, letters split by . * - _, or
-    single letters separated by spaces) are rewritten - lower-cased and cleaned - so the rest of the
-    message keeps the casing and punctuation BERTurk was pretrained on. "S1KT1R git" -> "siktir git".
+    Only words that are obfuscated (leetspeak inside a word, or single letters separated by dots,
+    dashes, underscores or spaces) are rewritten, so the rest of the message keeps the casing and
+    punctuation BERTurk was pretrained on. "S1KT1R git" -> "siktir git", "a.m.k" -> "amk".
+    Star-censored words ("s*ktir") are left alone: removing the star made validation macro-F1 worse,
+    because the fine-tuned model has learned that self-censoring itself signals an offensive tweet.
     """
-    text = SEP_WORD_RE.sub(lambda m: re.sub(r"[.*\-_ ]", "", m.group(0)), text)   # a m k / s.i.k -> amk / sik
+    text = SEP_WORD_RE.sub(lambda m: re.sub(r"[.\-_ ]", "", m.group(0)), text)   # a m k / s.i.k -> amk / sik
     out = []
     for tok in text.split(" "):
         protected = tok.startswith(("@", "#")) or "://" in tok or tok == "URL" or ("@" in tok and "." in tok)
-        if not protected and (DEOB_LEET_RE.search(tok) or DEOB_STAR_RE.search(tok)):
-            core = DEOB_LEET_RE.sub(_undo_leet, tr_lower(tok))
-            tok = DEOB_STAR_RE.sub("", core)
+        if not protected and DEOB_LEET_RE.search(tok):
+            tok = DEOB_LEET_RE.sub(_undo_leet, tr_lower(tok))
         out.append(tok)
     return " ".join(out)
 
 
-# stricter patterns for deobfuscate(): leet only between letters (or "$" starting a word), "*" inside words
+# stricter pattern for deobfuscate(): leet only between letters, or "$" starting a word
 DEOB_LEET_RE = re.compile(r"(?<=[^\W\d_])[013457@$€8](?=[^\W\d_])|(?:(?<=\s)|^)\$(?=[^\W\d_]{2,})")
-DEOB_STAR_RE = re.compile(r"(?<=[^\W\d_])\*+(?=[^\W\d_])")
 
 
 def normalize(text: str, keep_emoji: bool = True) -> str:

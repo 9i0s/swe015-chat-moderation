@@ -1,0 +1,7 @@
+{
+  "lexicon": 0.84,
+  "tfidf": 0.54,
+  "w2v_ffnn": 0.58,
+  "bert_fp32": 0.4,
+  "bert_int8": 0.33
+}

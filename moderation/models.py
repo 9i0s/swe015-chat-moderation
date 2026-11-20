@@ -110,7 +110,9 @@ class TransformerModel:
     """Fine-tuned DistilBERTurk, FP32 or dynamically quantized INT8.
 
     Input pipeline: light_normalize (as in training) + deobfuscate (inference only: rewrites
-    obfuscated words such as "s1kt1r" or "a.m.k"; kept because it does not hurt validation macro-F1).
+    obfuscated words such as "s1kt1r" or "a.m.k"). On validation it changes 9 of 3,176 tweets and moves
+    macro-F1 by 0.000 (FP32) / -0.0015 (INT8, threshold search picks 0.33 instead of 0.44); we keep it
+    because deliberate obfuscation is far more common in game chat than in tweets.
     """
     MAX_LEN = 96
 

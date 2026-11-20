@@ -1,0 +1,34 @@
+{
+  "args": {
+    "base": "/home/claude/swe015-chat-moderation/models/distilberturk-base",
+    "out": "/home/claude/swe015-chat-moderation/models/distilberturk-offense-fp32",
+    "epochs": 3,
+    "lr": 3e-05,
+    "batch": 32,
+    "seed": 42,
+    "threads": 2
+  },
+  "steps_per_epoch": 794,
+  "epochs": [
+    {
+      "epoch": 1,
+      "train_loss": 0.3637032970194928,
+      "val_macro_f1@0.5": 0.7681,
+      "minutes": 23.5
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.24470077110900162,
+      "val_macro_f1@0.5": 0.7666,
+      "minutes": 44.0
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.17699964829399167,
+      "val_macro_f1@0.5": 0.7763,
+      "minutes": 62.6
+    }
+  ],
+  "best_val_macro_f1@0.5": 0.7763,
+  "train_minutes": 62.6
+}

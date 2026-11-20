@@ -44,7 +44,7 @@
   <p>app/server.py<br>JSON in: text, model, compare</p></div>
 <div class="box" id="pre" style="left:660px;top:110px;width:548px;">
   <h4>Pre-processing <span class="tag b">B</span></h4>
-  <p><b>light_normalize</b> for the Transformer: collapse @USER, URLs, 3+ repeated characters.<br>
+  <p><b>light_normalize + deobfuscate</b> for the Transformer: collapse @USER, URLs, 3+ repeated characters; rewrite obfuscated words (s1kt1r, a.m.k).<br>
      <b>normalize</b> for classical models: Turkish lower-casing (I→ı, İ→i), leetspeak (s1kt1r→siktir), s.i.k / o*ç separators, repeats.</p></div>
 <div class="box main" id="bert" style="left:660px;top:262px;width:548px;">
   <h4>DistilBERTurk, fine-tuned · INT8 (default) <span class="tag c">C</span><span class="tag d">D</span></h4>
