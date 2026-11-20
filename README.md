@@ -69,22 +69,23 @@ Test set: 3176 tweets (613 offensive). Hardware: Intel(R) Xeon(R) Processor @ 2.
 
 | Model | Area | Number format | Macro-F1 (95% CI) | Off. recall | Size (MB) | Latency mean / p95 (ms) | Budget |
 |---|---|---|---|---|---|---|---|
-| Edit-distance lexicon (rules) | B | - | 0.670 (0.648-0.693) | 0.308 | 0.005 | 3.0 / 7.7 | yes |
-| tf-idf + logistic regression | B | FP64 | 0.763 (0.743-0.782) | 0.599 | 2.2 | 1.9 / 2.4 | yes |
+| Edit-distance lexicon (rules) | B | - | 0.670 (0.648-0.693) | 0.308 | 0.005 | 2.5 / 6.8 | yes |
+| tf-idf + logistic regression | B | FP64 | 0.763 (0.743-0.782) | 0.599 | 2.2 | 1.7 / 2.3 | yes |
 | word2vec + feedforward NN | A | FP32 | 0.659 (0.637-0.680) | 0.437 | 11.7 | 0.1 / 0.2 | yes |
-| DistilBERTurk fine-tuned (FP32) | C | FP32 | 0.792 (0.773-0.810) | 0.602 | 272.4 | 50.6 / 71.3 | no |
-| DistilBERTurk fine-tuned (INT8) | C+D | INT8 (dynamic) | 0.777 (0.758-0.795) | 0.649 | 143.3 | 14.9 / 22.4 | yes |
+| DistilBERTurk fine-tuned (FP32) | C | FP32 | 0.792 (0.773-0.810) | 0.602 | 272.4 | 44.6 / 61.2 | no |
+| DistilBERTurk fine-tuned (INT8) | C+D | INT8 (dynamic) | 0.785 (0.768-0.802) | 0.657 | 143.3 | 12.9 / 22.4 | yes |
 
-FP32 vs INT8 Transformer: identical labels on 93.1% of test messages.
+FP32 vs INT8 Transformer: identical labels on 94.7% of test messages.
 
 **Findings**
 
-- **DistilBERTurk FP32** is the most accurate model (macro-F1 0.792, offensive precision 0.725) but needs 50.6 ms per message and misses the 25 ms budget.
-- **INT8 quantization** makes it 3.4× faster (14.9 ms) and 1.9× smaller (143 MB; the FP32 embedding table is not quantized) for a loss of 0.015 macro-F1; 93.1 % of test labels are unchanged. This is the model the app runs.
-- **tf-idf + logistic regression** is a strong, cheap baseline (0.763 in 1.9 ms, 2.2 MB); the INT8 model beats it by 0.015, and the 95 % intervals overlap.
+- **DistilBERTurk FP32** is the most accurate model (macro-F1 0.792, offensive precision 0.725) but needs 44.6 ms per message and misses the 25 ms budget.
+- **INT8 quantization** makes it 3.5× faster (12.9 ms) and 1.9× smaller (143 MB; the FP32 embedding table is not quantized) for a loss of 0.007 macro-F1; 94.7 % of test labels are unchanged. This is the model the app runs.
+- **Batch size matters for dynamic INT8:** activation scales are computed per batch, so scoring 64 padded messages together changed individual INT8 scores by up to 0.5. INT8 is therefore evaluated one message at a time, exactly like the app.
+- **tf-idf + logistic regression** is a strong, cheap baseline (0.763 in 1.7 ms, 2.2 MB); the INT8 model beats it by 0.023, and the 95 % intervals overlap slightly.
 - **word2vec + feedforward network** is the weakest learned model (0.659): averaging word vectors loses word order, and 25k tweets are too few to learn good embeddings.
 - **The lexicon rules** are precise (0.716) but find only 31 % of offensive tweets; the app uses them to decide which words to mask.
-- Inference-time de-obfuscation for the Transformer changes 9 of 3,176 validation tweets (validation macro-F1: FP32 0.7870 with vs 0.7870 without; INT8 0.7719 vs 0.7734). It is kept because deliberate leetspeak (`s1kt1r`) is much more common in game chat than in tweets.
+- Inference-time de-obfuscation for the Transformer changes 9 of 3,176 validation tweets and leaves validation macro-F1 unchanged (FP32 0.787, INT8 0.784). It is kept because deliberate leetspeak (`s1kt1r`) is much more common in game chat than in tweets.
 
 All numbers come from `scripts/evaluate.py` and are stored in [`results/results.json`](results/results.json).
 
@@ -107,6 +108,8 @@ python run_app.py
   stratified split: 80 % train, 10 % validation, 10 % test (seed 42). The split IDs are in `data/split_ids.json`;
   tweet texts are not redistributed in this repository.
 - **Thresholds:** each model's decision threshold is tuned on the validation split for macro-F1, then frozen.
+- **INT8 is scored one message at a time**, exactly like the app: dynamic quantization computes activation scales per
+  batch, so in padded batches a message's score depends on its neighbours (FP32 does not; it is batched for speed).
   The test set is used once, for all five models.
 - **Latency:** end-to-end (normalisation + features + model) for a single message, batch size 1, PyTorch on
   **one CPU thread**, mean and 95th percentile over 200 test messages after 10 warm-up runs.

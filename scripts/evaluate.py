@@ -135,7 +135,7 @@ def main():
     for key in ORDER:
         out[f"p_{key}"] = np.round(probs_test[key], 4)
         out[f"pred_{key}"] = (probs_test[key] >= thresholds[key]).astype(int)
-    out.to_csv(ROOT / "results" / "test_predictions.tsv", sep="\t", index=False)
+    out.to_csv(ROOT / "results" / "test_predictions.tsv", sep="\t", index=False, quoting=3, escapechar="\\")
 
     # markdown table
     lines = [f"Test set: {len(yte)} tweets ({int(yte.sum())} offensive). Hardware: {hardware['cpu']}, "

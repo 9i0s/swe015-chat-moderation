@@ -14,16 +14,16 @@
     "latency_runs_per_model": 200,
     "warmup_runs": 10
   },
-  "fp32_int8_label_agreement": 0.9314,
-  "fp32_int8_mean_abs_prob_diff": 0.0682,
+  "fp32_int8_label_agreement": 0.9471,
+  "fp32_int8_mean_abs_prob_diff": 0.0606,
   "deobfuscation_ablation_val": {
     "bert_fp32": {
       "val_macro_f1_with_deobfuscate": 0.787,
       "val_macro_f1_without": 0.787
     },
     "bert_int8": {
-      "val_macro_f1_with_deobfuscate": 0.7719,
-      "val_macro_f1_without": 0.7734
+      "val_macro_f1_with_deobfuscate": 0.784,
+      "val_macro_f1_without": 0.784
     }
   },
   "models": [
@@ -56,11 +56,11 @@
         ]
       ],
       "size_mb": 0.005,
-      "latency_ms_mean": 3.02,
-      "latency_ms_p50": 2.48,
-      "latency_ms_p95": 7.74,
+      "latency_ms_mean": 2.52,
+      "latency_ms_p50": 1.96,
+      "latency_ms_p95": 6.76,
       "meets_budget": true,
-      "eval_seconds": 14.6
+      "eval_seconds": 11.2
     },
     {
       "key": "tfidf",
@@ -91,11 +91,11 @@
         ]
       ],
       "size_mb": 2.2,
-      "latency_ms_mean": 1.86,
-      "latency_ms_p50": 1.76,
-      "latency_ms_p95": 2.41,
+      "latency_ms_mean": 1.74,
+      "latency_ms_p50": 1.67,
+      "latency_ms_p95": 2.3,
       "meets_budget": true,
-      "eval_seconds": 3.9
+      "eval_seconds": 3.5
     },
     {
       "key": "w2v_ffnn",
@@ -126,11 +126,11 @@
         ]
       ],
       "size_mb": 11.7,
-      "latency_ms_mean": 0.15,
-      "latency_ms_p50": 0.14,
-      "latency_ms_p95": 0.23,
+      "latency_ms_mean": 0.13,
+      "latency_ms_p50": 0.12,
+      "latency_ms_p95": 0.2,
       "meets_budget": true,
-      "eval_seconds": 2.1
+      "eval_seconds": 2.3
     },
     {
       "key": "bert_fp32",
@@ -161,46 +161,46 @@
         ]
       ],
       "size_mb": 272.4,
-      "latency_ms_mean": 50.58,
-      "latency_ms_p50": 49.43,
-      "latency_ms_p95": 71.31,
+      "latency_ms_mean": 44.64,
+      "latency_ms_p50": 41.97,
+      "latency_ms_p95": 61.22,
       "meets_budget": false,
-      "eval_seconds": 220.5
+      "eval_seconds": 205.4
     },
     {
       "key": "bert_int8",
       "model": "DistilBERTurk fine-tuned (INT8)",
       "area": "C+D",
       "precision": "INT8 (dynamic)",
-      "threshold": 0.33,
-      "val_macro_f1": 0.7719,
-      "test_macro_f1": 0.7775,
+      "threshold": 0.4,
+      "val_macro_f1": 0.784,
+      "test_macro_f1": 0.7855,
       "test_macro_f1_ci95": [
-        0.7584,
-        0.7952
+        0.7681,
+        0.8024
       ],
-      "test_macro_f1@0.5": 0.7779,
-      "test_accuracy": 0.8602,
-      "offensive_precision": 0.6348,
-      "offensive_recall": 0.6493,
-      "offensive_f1": 0.6419,
-      "clean_f1": 0.9131,
+      "test_macro_f1@0.5": 0.7832,
+      "test_accuracy": 0.8659,
+      "offensive_precision": 0.6511,
+      "offensive_recall": 0.6574,
+      "offensive_f1": 0.6542,
+      "clean_f1": 0.9168,
       "confusion_matrix[[TN,FP],[FN,TP]]": [
         [
-          2334,
-          229
+          2347,
+          216
         ],
         [
-          215,
-          398
+          210,
+          403
         ]
       ],
       "size_mb": 143.3,
-      "latency_ms_mean": 14.87,
-      "latency_ms_p50": 13.7,
-      "latency_ms_p95": 22.41,
+      "latency_ms_mean": 12.87,
+      "latency_ms_p50": 11.73,
+      "latency_ms_p95": 22.36,
       "meets_budget": true,
-      "eval_seconds": 93.5
+      "eval_seconds": 90.1
     }
   ]
 }

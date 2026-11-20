@@ -23,8 +23,8 @@ validation chooses hyper-parameters and the decision threshold, and the test set
    - `deobfuscate` (Transformer, inference only): rewrites only obfuscated words: leetspeak `s1kt1r` → `siktir`,
      spaced or dotted letters `a.m.k` → `amk`. Star-censored words (`s*ktir`) are left alone: removing the star
      made validation worse, because the model learned that self-censoring itself signals an offensive tweet.
-     It changes 9 of the 3,176 validation tweets (validation macro-F1: FP32 unchanged, INT8 −0.0015 because the
-     threshold search moves), and it fixes deliberate leetspeak, which is common in game chat.
+     It changes 9 of the 3,176 validation tweets and leaves validation macro-F1 unchanged (FP32 0.787, INT8 0.784),
+     and it fixes deliberate leetspeak, which is common in game chat.
    - `normalize` (for tf-idf, word2vec, lexicon): Turkish lower-casing (Python's `lower()` turns `I` into `i`,
      but in Turkish `I` → `ı` and `İ` → `i`), leetspeak, separators, repeated letters, removing punctuation.
 4. **Model** returns P(offensive).
@@ -76,10 +76,14 @@ validation chooses hyper-parameters and the decision threshold, and the test set
 ### Quantization (area D), `scripts/quantize.py`
 - **Dynamic INT8 quantization:** each Linear layer's FP32 weights are mapped to 8-bit integers with a scale
   (w ≈ scale × int8). Activations are quantized on the fly per input. Matrix multiplications run in INT8,
-  which is ~3× faster on CPU and the weights take 4× less memory.
+  which was 3.5× faster in our measurement and the weights take 4× less memory.
 - Only Linear layers are quantized; the 32,000 × 768 embedding table (98 MB) stays FP32, which is why the file
   shrinks from 272 MB to 143 MB, not 4×.
 - No retraining and no calibration data needed ("post-training dynamic quantization").
+- **Batch size matters for dynamic INT8.** The activation scale is computed from the whole input tensor, so when
+  64 padded messages are scored together, one message's score depends on the others (we measured differences of
+  up to 0.5 in probability). FP32 does not have this problem. Because the app scores one message at a time, the
+  INT8 model is evaluated one message at a time too (`TransformerModel.predict_proba`, batch size 1).
 
 ## 4. The latency budget
 

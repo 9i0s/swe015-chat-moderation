@@ -110,9 +110,9 @@ class TransformerModel:
     """Fine-tuned DistilBERTurk, FP32 or dynamically quantized INT8.
 
     Input pipeline: light_normalize (as in training) + deobfuscate (inference only: rewrites
-    obfuscated words such as "s1kt1r" or "a.m.k"). On validation it changes 9 of 3,176 tweets and moves
-    macro-F1 by 0.000 (FP32) / -0.0015 (INT8, threshold search picks 0.33 instead of 0.44); we keep it
-    because deliberate obfuscation is far more common in game chat than in tweets.
+    obfuscated words such as "s1kt1r" or "a.m.k"). On validation it changes 9 of 3,176 tweets and leaves
+    macro-F1 unchanged (FP32 0.787, INT8 0.784 with and without it); we keep it because deliberate
+    obfuscation is far more common in game chat than in tweets.
     """
     MAX_LEN = 96
 
@@ -136,7 +136,13 @@ class TransformerModel:
         self.tok = BertTokenizerFast.from_pretrained(self.dir)
 
     @torch.no_grad()
-    def predict_proba(self, texts, batch_size=64):
+    def predict_proba(self, texts, batch_size=None):
+        # Dynamic INT8 quantization computes the activation scale per batch (padding included), so a
+        # message's score depends on its batch-mates. The app scores one message at a time, so the INT8
+        # model is always run with batch size 1. FP32 results do not depend on batching (checked), so
+        # FP32 uses batches of 64 for speed.
+        if batch_size is None:
+            batch_size = 1 if self.int8 else 64
         texts = [light_normalize(t) for t in texts]
         if self.use_deobfuscate:
             texts = [deobfuscate(t) for t in texts]

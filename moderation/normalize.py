@@ -54,8 +54,9 @@ def deobfuscate(text: str) -> str:
     Only words that are obfuscated (leetspeak inside a word, or single letters separated by dots,
     dashes, underscores or spaces) are rewritten, so the rest of the message keeps the casing and
     punctuation BERTurk was pretrained on. "S1KT1R git" -> "siktir git", "a.m.k" -> "amk".
-    Star-censored words ("s*ktir") are left alone: removing the star made validation macro-F1 worse,
-    because the fine-tuned model has learned that self-censoring itself signals an offensive tweet.
+    Star-censored words ("s*ktir") are left alone: removing the star made validation macro-F1 worse
+    (FP32: 0.7835 vs 0.787), because the fine-tuned model has learned that self-censoring itself signals
+    an offensive tweet.
     """
     text = SEP_WORD_RE.sub(lambda m: re.sub(r"[.\-_ ]", "", m.group(0)), text)   # a m k / s.i.k -> amk / sik
     out = []
